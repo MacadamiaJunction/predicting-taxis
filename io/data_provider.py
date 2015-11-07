@@ -4,6 +4,7 @@
 import numpy as np
 import cPickle as pickle
 
+# columns in the data are  cabid, pickup_lat, pickup_long, pickup_time (epoch) , drp_lat, drp_long, drp_time
 class DataProvider:
   def __init__(self,dataFile):
       self.data = pickle.load(open(dataFile,'r'))
