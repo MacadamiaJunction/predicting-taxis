@@ -5,11 +5,22 @@ import pandas as pd
 
 # def init(location):
 location = 'data/trip_data_2.csv'
-df = pd.read_csv(location)
-call_x = df.pickup_latitude
-call_y = df.pickup_latitude
-df['pickup_datetime'] = pd.to_datetime(df.pickup_datetime, '%Y-%m-%d %H:%M:%S')
-df['dropoff_datetime'] = pd.to_datetime(df.dropoff_datetime, '%Y-%m-%d %H:%M:%S')
+
+dtypes = {'medallion': str,
+          'pickup_datetime': str,
+          'dropoff_datetime': str,
+          'passenger_count': int,
+          'trip_distance': np.float64,
+          'pickup_longitude': np.float64,
+          'pickup_latitude':np.float64,
+          'dropoff_longitude':np.float64,
+          'dropoff_latitude':np.float64}
+
+df = pd.read_csv(location, dtype=dtypes,
+                 usecols=dtypes.keys())
+
+df['pickup_datetime'] = pd.to_datetime(df.pickup_datetime, format='%Y-%m-%d %H:%M:%S', errors='coerce')
+df['dropoff_datetime'] = pd.to_datetime(df.dropoff_datetime, format='%Y-%m-%d %H:%M:%S', errors='coerce')
 
 taxiIds = {}
 i = 0
