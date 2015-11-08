@@ -1,22 +1,28 @@
 import numpy as np
 
+# Taxi state
 REST = 0
 MOVE = 1
 
-GO = 0
-GO_SIM = 1
-TELEPORT = 2
+# Taxi command
+GO = 0 # Must go to a location, no distractions
+GO_SIM = 1 # Head towards to a location, allowed to pickup calls in between
+TELEPORT = 2 # Teleport to a location
 
-AVG_SPEED = 0.005  # TODO
-IDLE_INTERVAL = 60 * 30  # TODO
+AVG_SPEED = 0.005  # Calculated from data
+IDLE_INTERVAL = 60 * 30  # Half hour
 
 
 class Taxi(object):
+
     def __init__(self, start_time, start_loc):
+        """
+        Initialization. All taxis start by resting at a location.
+        """
         self.last_command_timestamp = start_time
         self.cur_loc = start_loc
         self.status = REST
-        self.commands = []
+        self.commands = [] # Command queue
         self.inactive = False
 
         # Stats
@@ -24,32 +30,43 @@ class Taxi(object):
         self.total_paid_distance = 0.0
 
     def schedule_go(self, pickup_time, pickup_loc, drop_time, drop_loc):
-        self.commands.append((GO, pickup_time, pickup_loc, drop_time, drop_loc))
+        """
+        Add a GO command to taxi queue
+        """
+        self.commands.append((GO, pickup_time, pickup_loc,
+            drop_time, drop_loc))
         self.inactive = False
 
     def schedule_go_sim(self, target_loc):
-        self.commands.append((GO_SIM, self.last_command_timestamp, self.cur_loc, target_loc))
+        """
+        Add a GO_SIM command to taxi queue
+        """
+        self.commands.append((GO_SIM, self.last_command_timestamp,
+            self.cur_loc, target_loc))
         self.inactive = False
 
     def advance_time(self, target_time):
         """
         Consumes tasks for this taxi in the queue.
 
-        If taxi is going towards somewhere using GO_SIM, it checks if we have a GO command
-        scheduled after GO_SIM and the time for that GO command has already come. In that case, taxi stops
-        going with GO_SIM and moves towards the pickup request from its current position.
+        If taxi is going towards somewhere using GO_SIM, it checks if we
+        have a GO command scheduled after GO_SIM and the time for that GO
+        command has already come. In that case, taxi stops going with GO_SIM
+        and moves towards the pickup request from its current position.
 
-        If taxi is going with GO_SIM but there are no tasks, it will continue until it reaches its destination.
+        If taxi is going with GO_SIM but there are no tasks, it will continue
+        until it reaches its destination.
 
-        Otherwise it just picks the passenger and delivers her to her destination.
+        Otherwise it just picks the passenger and delivers her to her
+        destination.
 
-        :param target_time: absolute time position for the simulation, has to be later than the previous value (cannot
-        go backwards)
+        :param target_time: absolute time position for the simulation, has to be later than the previous value (cannot go backwards)
         """
         assert(target_time > self.last_command_timestamp)
 
         if len(self.commands) == 0 and target_time - self.last_command_timestamp > IDLE_INTERVAL:
-            self.inactive = True  # We have not received something for a long time, sleep.
+            self.inactive = True  # Has not received a command for a long 
+                                    # time, sleep.
             return
 
         while len(self.commands) > 0:
@@ -59,19 +76,25 @@ class Taxi(object):
             if cur_command[0] == GO_SIM:
                 scheduled_time, scheduled_loc, target_loc = param_tuple
 
-                if len(self.commands) == 2 and self.commands[1][0] == GO and target_time - self.commands[1][1] >= 0:
-                    # We have a GO command scheduled already after this one and the pickup request was already made
-                    # So "move" until we receive the order, then stop and move towards the new order.
-                    # We just teleport to the source, otherwise we need to get a separate queue that we need to check
+                if len(self.commands) == 2 and self.commands[1][0] == GO and \
+                    target_time - self.commands[1][1] >= 0:
+                    # We have a GO command scheduled already after this one 
+                    # and the pickup request was already made
+                    # So "move" until we receive the order, then stop and move 
+                    # towards the new order.
+                    # We just teleport to the source, otherwise we need to get
+                    # a separate queue that we need to check
                     # Unnecessary complexity
                     pickup_time, pickup_loc, _, _ = self.commands[1][1::]
-                    new_loc = self.simulate_move(scheduled_time, scheduled_loc, target_loc, pickup_time)
+                    new_loc = self.simulate_move(scheduled_time,
+                        scheduled_loc, target_loc, pickup_time)
 
-                    # Move from the previous location to location at the time of pickup request
-                    # and from there to the actual pickup location
+                    # Move from the previous location to location at the time  
+                    # of pickup request and from there to the actual pickup
+                    # location
                     # All unpaid
-                    self.total_distance += euclidean_distance(self.cur_loc, new_loc) + euclidean_distance(new_loc,
-                                                                                                          pickup_loc)
+                    self.total_distance += euclidean_distance(self.cur_loc,
+                        new_loc) + euclidean_distance(new_loc, pickup_loc)
 
                     # Teleport
                     self.cur_loc = pickup_loc
@@ -80,17 +103,21 @@ class Taxi(object):
                     self.commands.pop(0)
                     self.last_command_timestamp = target_time
                 else:
-                    # We are going towards some cluster, noone is waiting for us
-                    new_loc = self.simulate_move(scheduled_time, scheduled_loc, target_loc, target_time)
+                    # We are going towards some cluster,
+                    # noone is waiting for us
+                    new_loc = self.simulate_move(scheduled_time,
+                        scheduled_loc, target_loc, target_time)
 
                     # This is unpaid travel, so only add to total distance
-                    distance_traveled = euclidean_distance(self.cur_loc, new_loc)
+                    distance_traveled = euclidean_distance(self.cur_loc,
+                        new_loc)
                     self.total_distance += distance_traveled
 
                     self.cur_loc = new_loc
 
                     if self.cur_loc == target_loc:
-                        self.commands.pop(0)  # We already arrived at the location
+                        # We already arrived at the location
+                        self.commands.pop(0)  
                         self.last_command_timestamp = target_time
                     else:
                         break  # We are still going towards somewhere
