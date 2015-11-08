@@ -154,7 +154,7 @@ class Taxi(object):
         x_diff = (end_loc[0] - start_loc[0])
         y_diff = (end_loc[1] - start_loc[1])
 
-        # TODO: Check please
+        # TODO: Check please -- MM: seems correct
         angle = np.arctan(y_diff / y_diff)
         delta_x = np.cos(angle) * AVG_SPEED * elapsed
         delta_y = np.sin(angle) * AVG_SPEED * elapsed
@@ -169,4 +169,8 @@ class Taxi(object):
 
 
 def euclidean_distance(loc1, loc2):
+    """
+    :loc1: Location in array-like of length 2  
+    :loc2: Location in array-like of length 2
+    """
     return np.sqrt((loc1[0] - loc2[0]) ** 2 + (loc1[1] - loc2[1]) ** 2)
