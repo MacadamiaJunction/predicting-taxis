@@ -144,7 +144,8 @@ class Taxi(object):
 
     def simulate_move(self, start_time, start_loc, end_loc, cur_time):
         """
-        Simulates a continuous movement towards a target location, following a line trajectory.
+        Simulates a continuous movement towards a target location,
+        following a line trajectory.
 
         :return: a tuple with updated x, y coordinates
         """
@@ -161,7 +162,7 @@ class Taxi(object):
         x_update = start_loc[0] + delta_x
         y_update = start_loc[1] + delta_y
 
-        if x_update > x_diff:  # Overshoot
+        if x_update > x_diff or y_update > y_diff:  # Overshoot
             return end_loc[0], end_loc[1]
         else:
             return start_loc[0] + x_update, start_loc[1] + y_update
